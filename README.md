@@ -196,7 +196,3 @@ One setting can't be changed via ADB — do this manually on the device:
 > **Settings → Battery → Background usage limits** → toggle OFF **"Put unused apps to sleep"**
 
 A reboot is recommended after applying optimizations.
-
-## License
-
-MIT
