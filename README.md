@@ -1,6 +1,6 @@
 # Samsung Device Optimizer
 
-An interactive ADB toolkit that detects your Samsung Galaxy device and applies safe, reversible optimizations — rotation fixes, bloatware removal, update prevention, battery management, and memory tuning.
+An interactive ADB toolkit that detects your Samsung Galaxy device and applies safe, reversible optimizations — rotation fixes, bloatware removal, update blocking, ad blocking via DNS, battery management, and memory tuning.
 
 **No root required.** Everything is done through standard ADB commands and can be reverted instantly.
 
@@ -61,6 +61,7 @@ optimize-samsung.bat --all
 | **Bloatware** | Disable Bixby, Samsung Free, AR Zone, Game Optimizer, ad services (16+ packages) | All |
 | **Per-App Rotation** | Compat framework overrides for Facebook and other stubborn apps | Foldables & tablets |
 | **OS Updates** | Disable Samsung OTA system updates (opt-in only, not recommended by default) | All |
+| **Private DNS** | Configure DNS-over-TLS provider (Cloudflare, Google, Quad9, AdGuard, NextDNS, custom) | All |
 
 ## Usage
 
@@ -84,6 +85,7 @@ Module flags (non-interactive):
   --bloatware     Bloatware removal
   --per-app       Per-app rotation overrides
   --updates       Disable/re-enable OS updates
+  --dns           Configure Private DNS provider
 
   -h, --help      Show help
 ```
@@ -108,6 +110,7 @@ Module flags:
   -Bloatware      Bloatware removal
   -PerApp         Per-app rotation overrides
   -Updates        Disable/re-enable OS updates
+  -Dns            Configure Private DNS provider
 ```
 
 ### Windows (Command Prompt via .bat)
@@ -121,6 +124,7 @@ optimize-samsung.bat --dry-run               # Preview
 optimize-samsung.bat --revert                # Undo
 optimize-samsung.bat --install-adb           # Install ADB
 optimize-samsung.bat --updates               # Disable OS updates
+optimize-samsung.bat --dns                   # Configure Private DNS
 optimize-samsung.bat RFCX61GYT3Y             # Target specific device
 ```
 
@@ -135,6 +139,8 @@ optimize-samsung.bat RFCX61GYT3Y             # Target specific device
 ./optimize-samsung.sh --bloatware --rotation  # Only bloatware + rotation
 ./optimize-samsung.sh --updates               # Disable OS updates
 ./optimize-samsung.sh --updates --revert      # Re-enable OS updates
+./optimize-samsung.sh --dns                   # Configure Private DNS
+./optimize-samsung.sh --dns --revert          # Reset DNS to automatic
 ./optimize-samsung.sh --report                # Device status only
 ```
 
@@ -198,6 +204,7 @@ Most optimizations survive reboots, but **Samsung OTA / One UI updates may reset
 | `wm set-ignore-orientation-request false` | ✅ Yes | ❌ Often resets | Re-run `--rotation` |
 | `am compat enable` per-app overrides | ✅ Yes | ❌ Often resets | Re-run `--per-app` |
 | Disabled OTA agents (if used) | ✅ Yes | N/A | — |
+| Private DNS setting | ✅ Yes | ✅ Usually | — |
 
 **After a system/OTA update:** re-run `./optimize-samsung.sh --rotation --per-app --bloatware` to restore anything that was reset.
 

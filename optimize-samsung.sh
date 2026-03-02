@@ -695,6 +695,78 @@ revert_per_app_rotation() {
     fi
 }
 
+configure_dns() {
+    log_header "CONFIGURE PRIVATE DNS"
+
+    # Show current DNS setting
+    local current_mode current_host
+    current_mode=$($ADB -s "$SERIAL" shell settings get global private_dns_mode 2>/dev/null || echo "unknown")
+    current_host=$($ADB -s "$SERIAL" shell settings get global private_dns_specifier 2>/dev/null || echo "")
+
+    echo ""
+    log_info "Current Private DNS mode: $current_mode"
+    if [ "$current_mode" = "hostname" ] && [ -n "$current_host" ] && [ "$current_host" != "null" ]; then
+        log_info "Current DNS provider: $current_host"
+    fi
+    echo ""
+
+    echo -e "  ${BOLD}Select a DNS provider:${NC}"
+    echo ""
+    echo -e "  ${BOLD} 1)${NC} Cloudflare          ${DIM}one.one.one.one (1.1.1.1 — fast, privacy-focused)${NC}"
+    echo -e "  ${BOLD} 2)${NC} Google               ${DIM}dns.google (8.8.8.8)${NC}"
+    echo -e "  ${BOLD} 3)${NC} Quad9                ${DIM}dns.quad9.net (9.9.9.9 — malware blocking)${NC}"
+    echo -e "  ${BOLD} 4)${NC} AdGuard              ${DIM}dns.adguard-dns.com (ad & tracker blocking)${NC}"
+    echo -e "  ${BOLD} 5)${NC} NextDNS              ${DIM}Requires your NextDNS config ID${NC}"
+    echo -e "  ${BOLD} 6)${NC} Custom               ${DIM}Enter any DNS-over-TLS hostname${NC}"
+    echo ""
+    read -rp "  Selection [1-6]: " dns_choice
+
+    local dns_host=""
+    case "$dns_choice" in
+        1) dns_host="one.one.one.one" ;;
+        2) dns_host="dns.google" ;;
+        3) dns_host="dns.quad9.net" ;;
+        4) dns_host="dns.adguard-dns.com" ;;
+        5)
+            read -rp "  Enter your NextDNS config ID: " nextdns_id
+            if [ -z "$nextdns_id" ]; then
+                log_error "No config ID provided. Aborting DNS configuration."
+                return
+            fi
+            dns_host="${nextdns_id}.dns.nextdns.io"
+            ;;
+        6)
+            read -rp "  Enter DNS-over-TLS hostname: " custom_host
+            if [ -z "$custom_host" ]; then
+                log_error "No hostname provided. Aborting DNS configuration."
+                return
+            fi
+            dns_host="$custom_host"
+            ;;
+        *)
+            log_error "Invalid selection. Aborting DNS configuration."
+            return
+            ;;
+    esac
+
+    echo ""
+    log_info "Setting Private DNS to: $dns_host"
+    adb_cmd settings put global private_dns_specifier "$dns_host"
+    adb_cmd settings put global private_dns_mode hostname
+    log_success "Private DNS configured: $dns_host"
+    echo ""
+    log_info "Verify on device: Settings → Connections → More connection settings → Private DNS"
+}
+
+revert_dns() {
+    log_header "REVERTING PRIVATE DNS"
+
+    adb_cmd settings put global private_dns_mode opportunistic
+    adb_cmd settings delete global private_dns_specifier
+    log_success "Private DNS reset to Automatic (system default)"
+    log_info "Device will use your network's default DNS servers."
+}
+
 show_device_report() {
     log_header "DEVICE STATUS REPORT"
 
@@ -778,6 +850,9 @@ build_menu() {
 
     # --- Disable updates ---
     MENU_OPTIONS+=("updates|Disable OS Updates|Block Samsung OTA system updates (not recommended unless needed)|no")
+
+    # --- DNS ---
+    MENU_OPTIONS+=("dns|Configure Private DNS|Set DNS provider (Cloudflare, Google, Quad9, AdGuard, etc.)|no")
 
     # --- Report ---
     MENU_OPTIONS+=("report|Device Status Report|Show current settings, RAM, battery, packages|yes")
@@ -891,6 +966,7 @@ run_modules() {
                 bloatware) reenable_bloatware ;;
                 per_app)   revert_per_app_rotation ;;
                 updates)   enable_updates ;;
+                dns)       revert_dns ;;
                 report)    show_device_report ;;
             esac
         else
@@ -901,6 +977,7 @@ run_modules() {
                 bloatware) disable_bloatware ;;
                 per_app)   apply_per_app_rotation ;;
                 updates)   disable_updates ;;
+                dns)       configure_dns ;;
                 report)    show_device_report ;;
             esac
         fi
@@ -928,6 +1005,7 @@ usage() {
     echo "  --memory        Only apply/revert memory fixes"
     echo "  --per-app       Only apply/revert per-app rotation overrides"
     echo "  --updates       Only disable/re-enable OS updates"
+    echo "  --dns           Configure Private DNS provider"
     echo ""
     echo "Other:"
     echo "  --install-adb   Download and install ADB only"
@@ -957,6 +1035,7 @@ while [[ $# -gt 0 ]]; do
         --memory)       EXPLICIT_MODULES+=("memory"); INTERACTIVE=false; shift ;;
         --per-app)      EXPLICIT_MODULES+=("per_app"); INTERACTIVE=false; shift ;;
         --updates)      EXPLICIT_MODULES+=("updates"); INTERACTIVE=false; shift ;;
+        --dns)          EXPLICIT_MODULES+=("dns"); INTERACTIVE=false; shift ;;
         --install-adb)  INSTALL_ADB_ONLY=true; shift ;;
         -h|--help)      usage; exit 0 ;;
         -*)             log_error "Unknown option: $1"; echo ""; usage; exit 1 ;;

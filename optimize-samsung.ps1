@@ -21,6 +21,7 @@ param(
     [switch]$Bloatware,
     [switch]$PerApp,
     [switch]$Updates,
+    [switch]$Dns,
     [switch]$InstallAdb,
     [string]$Serial = "",
     [switch]$Help
@@ -610,6 +611,78 @@ function Enable-OsUpdates {
     Write-Info "OS updates are now active again."
 }
 
+function Set-PrivateDns {
+    Write-Header "CONFIGURE PRIVATE DNS"
+
+    # Show current setting
+    $currentMode = (& $script:ADB -s $script:SERIAL shell settings get global private_dns_mode 2>&1).Trim()
+    $currentHost = (& $script:ADB -s $script:SERIAL shell settings get global private_dns_specifier 2>&1).Trim()
+
+    Write-Host ""
+    Write-Info "Current Private DNS mode: $currentMode"
+    if ($currentMode -eq "hostname" -and $currentHost -and $currentHost -ne "null") {
+        Write-Info "Current DNS provider: $currentHost"
+    }
+    Write-Host ""
+
+    Write-Host "  Select a DNS provider:" -ForegroundColor White
+    Write-Host ""
+    Write-Host "   1) " -NoNewline -ForegroundColor White; Write-Host "Cloudflare          " -NoNewline; Write-Host "one.one.one.one (1.1.1.1 - fast, privacy-focused)" -ForegroundColor DarkGray
+    Write-Host "   2) " -NoNewline -ForegroundColor White; Write-Host "Google               " -NoNewline; Write-Host "dns.google (8.8.8.8)" -ForegroundColor DarkGray
+    Write-Host "   3) " -NoNewline -ForegroundColor White; Write-Host "Quad9                " -NoNewline; Write-Host "dns.quad9.net (9.9.9.9 - malware blocking)" -ForegroundColor DarkGray
+    Write-Host "   4) " -NoNewline -ForegroundColor White; Write-Host "AdGuard              " -NoNewline; Write-Host "dns.adguard-dns.com (ad & tracker blocking)" -ForegroundColor DarkGray
+    Write-Host "   5) " -NoNewline -ForegroundColor White; Write-Host "NextDNS              " -NoNewline; Write-Host "Requires your NextDNS config ID" -ForegroundColor DarkGray
+    Write-Host "   6) " -NoNewline -ForegroundColor White; Write-Host "Custom               " -NoNewline; Write-Host "Enter any DNS-over-TLS hostname" -ForegroundColor DarkGray
+    Write-Host ""
+
+    $dnsChoice = Read-Host "  Selection [1-6]"
+    $dnsHost = ""
+
+    switch ($dnsChoice) {
+        "1" { $dnsHost = "one.one.one.one" }
+        "2" { $dnsHost = "dns.google" }
+        "3" { $dnsHost = "dns.quad9.net" }
+        "4" { $dnsHost = "dns.adguard-dns.com" }
+        "5" {
+            $nextdnsId = Read-Host "  Enter your NextDNS config ID"
+            if (-not $nextdnsId) {
+                Write-Fail "No config ID provided. Aborting DNS configuration."
+                return
+            }
+            $dnsHost = "$nextdnsId.dns.nextdns.io"
+        }
+        "6" {
+            $customHost = Read-Host "  Enter DNS-over-TLS hostname"
+            if (-not $customHost) {
+                Write-Fail "No hostname provided. Aborting DNS configuration."
+                return
+            }
+            $dnsHost = $customHost
+        }
+        default {
+            Write-Fail "Invalid selection. Aborting DNS configuration."
+            return
+        }
+    }
+
+    Write-Host ""
+    Write-Info "Setting Private DNS to: $dnsHost"
+    Invoke-Adb "settings", "put", "global", "private_dns_specifier", $dnsHost | Out-Null
+    Invoke-Adb "settings", "put", "global", "private_dns_mode", "hostname" | Out-Null
+    Write-Ok "Private DNS configured: $dnsHost"
+    Write-Host ""
+    Write-Info "Verify on device: Settings > Connections > More connection settings > Private DNS"
+}
+
+function Reset-PrivateDns {
+    Write-Header "REVERTING PRIVATE DNS"
+
+    Invoke-Adb "settings", "put", "global", "private_dns_mode", "opportunistic" | Out-Null
+    Invoke-Adb "settings", "delete", "global", "private_dns_specifier" | Out-Null
+    Write-Ok "Private DNS reset to Automatic (system default)"
+    Write-Info "Device will use your network's default DNS servers."
+}
+
 function Show-DeviceReport {
     Write-Header "DEVICE STATUS REPORT"
 
@@ -686,6 +759,9 @@ function Show-InteractiveMenu {
 
     # Disable updates
     $menuOptions += @{ Key = "updates"; Label = "Disable OS Updates"; Desc = "Block Samsung OTA system updates (not recommended unless needed)"; Rec = $false }
+
+    # DNS
+    $menuOptions += @{ Key = "dns"; Label = "Configure Private DNS"; Desc = "Set DNS provider (Cloudflare, Google, Quad9, AdGuard, etc.)"; Rec = $false }
 
     # Report
     $menuOptions += @{ Key = "report"; Label = "Device Status Report"; Desc = "Show current settings, RAM, battery, packages"; Rec = $true }
@@ -792,6 +868,7 @@ function Run-Modules {
                 "bloatware" { Enable-Bloatware }
                 "per_app"   { Revert-PerAppRotation }
                 "updates"   { Enable-OsUpdates }
+                "dns"       { Reset-PrivateDns }
                 "report"    { Show-DeviceReport }
             }
         }
@@ -803,6 +880,7 @@ function Run-Modules {
                 "bloatware" { Disable-Bloatware }
                 "per_app"   { Apply-PerAppRotation }
                 "updates"   { Disable-OsUpdates }
+                "dns"       { Set-PrivateDns }
                 "report"    { Show-DeviceReport }
             }
         }
@@ -830,6 +908,7 @@ function Show-Usage {
     Write-Host "  -Bloatware      Bloatware removal"
     Write-Host "  -PerApp         Per-app rotation overrides"
     Write-Host "  -Updates        Disable/re-enable OS updates"
+    Write-Host "  -Dns            Configure Private DNS provider"
     Write-Host ""
     Write-Host "Other:"
     Write-Host "  -InstallAdb     Download and install ADB only"
@@ -889,6 +968,7 @@ if ($Memory)    { $explicitModules += "memory" }
 if ($Bloatware) { $explicitModules += "bloatware" }
 if ($PerApp)    { $explicitModules += "per_app" }
 if ($Updates)   { $explicitModules += "updates" }
+if ($Dns)       { $explicitModules += "dns" }
 
 if ($Report) {
     Show-DeviceReport

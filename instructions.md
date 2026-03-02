@@ -165,6 +165,35 @@ To re-enable:
 
 This re-enables both packages and the software update setting.
 
+### 7. Configure Private DNS
+
+Sets Android's Private DNS (DNS-over-TLS) to a provider of your choice. Available on Android 9+ (API 28+). The script presents an interactive picker with popular providers:
+
+| Provider | Hostname | Notes |
+|---|---|---|
+| Cloudflare | `one.one.one.one` | 1.1.1.1 — fast, privacy-focused |
+| Google | `dns.google` | 8.8.8.8 |
+| Quad9 | `dns.quad9.net` | 9.9.9.9 — malware/phishing blocking |
+| AdGuard | `dns.adguard-dns.com` | Ad & tracker blocking |
+| NextDNS | `{config-id}.dns.nextdns.io` | Customizable — requires config ID |
+| Custom | User-specified | Any DNS-over-TLS hostname |
+
+**ADB commands used:**
+```bash
+# Set the DNS-over-TLS hostname
+adb shell settings put global private_dns_specifier <hostname>
+# Switch to "strict" Private DNS mode (always use the specified host)
+adb shell settings put global private_dns_mode hostname
+```
+
+**Revert** resets to Android's default "Automatic" mode:
+```bash
+adb shell settings put global private_dns_mode opportunistic
+adb shell settings delete global private_dns_specifier
+```
+
+Verify on device: **Settings → Connections → More connection settings → Private DNS**
+
 ---
 
 ## Usage
@@ -211,6 +240,7 @@ The script will:
 ./optimize-samsung.sh --bloatware      # Bloatware removal only
 ./optimize-samsung.sh --per-app        # Facebook rotation overrides only
 ./optimize-samsung.sh --updates        # Disable OS updates
+./optimize-samsung.sh --dns            # Configure Private DNS
 ```
 
 ### Revert specific modules
@@ -218,6 +248,7 @@ The script will:
 ./optimize-samsung.sh --rotation --revert    # Revert rotation only
 ./optimize-samsung.sh --bloatware --revert   # Re-enable bloatware only
 ./optimize-samsung.sh --updates --revert     # Re-enable OS updates
+./optimize-samsung.sh --dns --revert         # Reset DNS to automatic
 ```
 
 ### Device status report
@@ -258,6 +289,7 @@ Most optimizations **survive reboots**, but Samsung OTA updates or major One UI 
 | `wm set-ignore-orientation-request false` | ✅ Yes | ❌ Often resets | Re-run `--rotation` |
 | `am compat enable` per-app overrides | ✅ Yes | ❌ Often resets | Re-run `--per-app` |
 | Disabled OTA agents (`--updates`) | ✅ Yes | N/A (updates are blocked) | — |
+| Private DNS setting (`--dns`) | ✅ Yes | ✅ Usually | — |
 
 **After a system/OTA update:** Re-run rotation and per-app overrides:
 ```bash
