@@ -719,7 +719,7 @@ configure_dns() {
     echo -e "  ${BOLD} 5)${NC} NextDNS              ${DIM}Requires your NextDNS config ID${NC}"
     echo -e "  ${BOLD} 6)${NC} Custom               ${DIM}Enter any DNS-over-TLS hostname${NC}"
     echo ""
-    read -rp "  Selection [1-6]: " dns_choice
+    read -rp "  Selection [1-6]: " dns_choice || true
 
     local dns_host=""
     case "$dns_choice" in
