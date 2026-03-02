@@ -6,6 +6,7 @@ An interactive ADB toolkit that detects your Samsung Galaxy device and applies s
 
 ## Features
 
+- **Cross-platform** — bash for Linux/macOS, PowerShell + batch for Windows
 - **Auto-installs ADB** if not found on your system (downloads official Google platform-tools)
 - **Detects your device** — identifies foldables (Fold/Flip), tablets, and phones automatically
 - **Interactive menu** — shows recommended optimizations tailored to the connected device
@@ -15,8 +16,11 @@ An interactive ADB toolkit that detects your Samsung Galaxy device and applies s
 
 ## Quick Start
 
+### Linux / macOS
+
 ```bash
-git clone <repo-url> && cd zfold6-mod
+git clone https://github.com/mr-tbot/Samsung-Optimizer-Rotation-Enabler.git
+cd Samsung-Optimizer-Rotation-Enabler
 chmod +x optimize-samsung.sh
 
 # Interactive — detects device, shows menu
@@ -29,7 +33,23 @@ chmod +x optimize-samsung.sh
 ./optimize-samsung.sh --dry-run
 ```
 
-> Don't have ADB? The script will offer to download and install it for you, or run `./optimize-samsung.sh --install-adb`.
+### Windows
+
+```powershell
+git clone https://github.com/mr-tbot/Samsung-Optimizer-Rotation-Enabler.git
+cd Samsung-Optimizer-Rotation-Enabler
+
+# Option 1: Double-click optimize-samsung.bat
+# Option 2: Run from PowerShell
+.\optimize-samsung.ps1
+
+# Or from Command Prompt
+optimize-samsung.bat --all
+```
+
+> Don't have ADB? The script will offer to download and install it for you.
+> Linux/macOS: `./optimize-samsung.sh --install-adb`
+> Windows: `optimize-samsung.bat --install-adb` or `.\optimize-samsung.ps1 -InstallAdb`
 
 ## What It Optimizes
 
@@ -42,6 +62,8 @@ chmod +x optimize-samsung.sh
 | **Per-App Rotation** | Compat framework overrides for Facebook and other stubborn apps | Foldables & tablets |
 
 ## Usage
+
+### Linux / macOS (bash)
 
 ```
 ./optimize-samsung.sh [OPTIONS] [SERIAL]
@@ -62,6 +84,40 @@ Module flags (non-interactive):
   --per-app       Per-app rotation overrides
 
   -h, --help      Show help
+```
+
+### Windows (PowerShell)
+
+```
+.\optimize-samsung.ps1 [OPTIONS] [-Serial SERIAL]
+
+Modes:
+  (default)       Interactive — detect device, show optimization menu
+  -All            Apply all recommended optimizations (no menu)
+  -DryRun         Preview commands without executing
+  -Revert         Undo optimizations
+  -Report         Show device status report only
+  -InstallAdb     Download and install ADB only
+
+Module flags:
+  -Rotation       Rotation & display fixes
+  -Battery        Battery & power management
+  -Memory         Memory optimization
+  -Bloatware      Bloatware removal
+  -PerApp         Per-app rotation overrides
+```
+
+### Windows (Command Prompt via .bat)
+
+The `.bat` file accepts the same `--flags` as the bash script and passes them through to PowerShell:
+
+```cmd
+optimize-samsung.bat                         # Interactive
+optimize-samsung.bat --all                   # Apply all
+optimize-samsung.bat --dry-run               # Preview
+optimize-samsung.bat --revert                # Undo
+optimize-samsung.bat --install-adb           # Install ADB
+optimize-samsung.bat RFCX61GYT3Y             # Target specific device
 ```
 
 ### Examples
@@ -116,10 +172,14 @@ Should work on any Samsung Galaxy device with USB debugging enabled. Device type
 
 ## Files
 
-| File | Purpose |
-|---|---|
-| [optimize-samsung.sh](optimize-samsung.sh) | Main script — run this |
-| [instructions.md](instructions.md) | Detailed documentation — what each setting does, troubleshooting, manual steps |
+| File | Platform | Purpose |
+|---|---|---|
+| [optimize-samsung.sh](optimize-samsung.sh) | Linux / macOS | Main bash script |
+| [optimize-samsung.ps1](optimize-samsung.ps1) | Windows | Full PowerShell port |
+| [optimize-samsung.bat](optimize-samsung.bat) | Windows | Batch launcher (calls .ps1 with `--flag` style args) |
+| [instructions.md](instructions.md) | All | Detailed technical documentation |
+
+> **For developers / AI-assisted development:** [instructions.md](instructions.md) contains comprehensive documentation of every optimization, what each ADB command does, troubleshooting steps, and device-specific notes. It's included specifically so that anyone modifying this software — whether with AI assistance or otherwise — has full context about the design decisions and technical details.
 
 ## Safety
 
