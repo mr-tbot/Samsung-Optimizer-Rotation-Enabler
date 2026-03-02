@@ -1,6 +1,6 @@
 # Samsung Device Optimizer
 
-An interactive ADB toolkit that detects your Samsung Galaxy device and applies safe, reversible optimizations — rotation fixes, bloatware removal, battery management, and memory tuning.
+An interactive ADB toolkit that detects your Samsung Galaxy device and applies safe, reversible optimizations — rotation fixes, bloatware removal, update prevention, battery management, and memory tuning.
 
 **No root required.** Everything is done through standard ADB commands and can be reverted instantly.
 
