@@ -7,6 +7,7 @@
 ::   optimize-samsung.bat --all             Apply all optimizations
 ::   optimize-samsung.bat --dry-run         Preview without changes
 ::   optimize-samsung.bat --revert          Undo all changes
+::   optimize-samsung.bat --updates         Disable/re-enable OS updates
 ::   optimize-samsung.bat --report          Device status report
 ::   optimize-samsung.bat --install-adb     Download and install ADB
 ::   optimize-samsung.bat --help            Show help
@@ -27,6 +28,7 @@ if /I "%~1"=="--battery"     set "PS_ARGS=!PS_ARGS! -Battery"      & shift & got
 if /I "%~1"=="--memory"      set "PS_ARGS=!PS_ARGS! -Memory"       & shift & goto parse_args
 if /I "%~1"=="--bloatware"   set "PS_ARGS=!PS_ARGS! -Bloatware"    & shift & goto parse_args
 if /I "%~1"=="--per-app"     set "PS_ARGS=!PS_ARGS! -PerApp"       & shift & goto parse_args
+if /I "%~1"=="--updates"    set "PS_ARGS=!PS_ARGS! -Updates"      & shift & goto parse_args
 if /I "%~1"=="--install-adb" set "PS_ARGS=!PS_ARGS! -InstallAdb"   & shift & goto parse_args
 if /I "%~1"=="--help"        set "PS_ARGS=!PS_ARGS! -Help"         & shift & goto parse_args
 if /I "%~1"=="-h"            set "PS_ARGS=!PS_ARGS! -Help"         & shift & goto parse_args

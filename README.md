@@ -60,6 +60,7 @@ optimize-samsung.bat --all
 | **Memory** | Disable RAM Plus to stop swap thrashing | ≤4GB RAM devices |
 | **Bloatware** | Disable Bixby, Samsung Free, AR Zone, Game Optimizer, ad services (16+ packages) | All |
 | **Per-App Rotation** | Compat framework overrides for Facebook and other stubborn apps | Foldables & tablets |
+| **OS Updates** | Disable Samsung OTA system updates (opt-in only, not recommended by default) | All |
 
 ## Usage
 
@@ -82,6 +83,7 @@ Module flags (non-interactive):
   --memory        Memory optimization
   --bloatware     Bloatware removal
   --per-app       Per-app rotation overrides
+  --updates       Disable/re-enable OS updates
 
   -h, --help      Show help
 ```
@@ -105,6 +107,7 @@ Module flags:
   -Memory         Memory optimization
   -Bloatware      Bloatware removal
   -PerApp         Per-app rotation overrides
+  -Updates        Disable/re-enable OS updates
 ```
 
 ### Windows (Command Prompt via .bat)
@@ -117,6 +120,7 @@ optimize-samsung.bat --all                   # Apply all
 optimize-samsung.bat --dry-run               # Preview
 optimize-samsung.bat --revert                # Undo
 optimize-samsung.bat --install-adb           # Install ADB
+optimize-samsung.bat --updates               # Disable OS updates
 optimize-samsung.bat RFCX61GYT3Y             # Target specific device
 ```
 
@@ -129,6 +133,8 @@ optimize-samsung.bat RFCX61GYT3Y             # Target specific device
 ./optimize-samsung.sh --dry-run               # Interactive preview
 ./optimize-samsung.sh --revert                # Interactive revert
 ./optimize-samsung.sh --bloatware --rotation  # Only bloatware + rotation
+./optimize-samsung.sh --updates               # Disable OS updates
+./optimize-samsung.sh --updates --revert      # Re-enable OS updates
 ./optimize-samsung.sh --report                # Device status only
 ```
 
@@ -181,6 +187,22 @@ Should work on any Samsung Galaxy device with USB debugging enabled. Device type
 
 > **For developers / AI-assisted development:** [instructions.md](instructions.md) contains comprehensive documentation of every optimization, what each ADB command does, troubleshooting steps, and device-specific notes. It's included specifically so that anyone modifying this software — whether with AI assistance or otherwise — has full context about the design decisions and technical details.
 
+## Persistence After System Updates
+
+Most optimizations survive reboots, but **Samsung OTA / One UI updates may reset some settings**:
+
+| What | Survives reboot? | Survives OTA update? | Action needed |
+|---|---|---|---|
+| Settings database changes (rotation, battery, RAM Plus) | ✅ Yes | ✅ Usually | — |
+| Disabled bloatware packages | ✅ Yes | ⚠️ May re-enable | Re-run `--bloatware` |
+| `wm set-ignore-orientation-request false` | ✅ Yes | ❌ Often resets | Re-run `--rotation` |
+| `am compat enable` per-app overrides | ✅ Yes | ❌ Often resets | Re-run `--per-app` |
+| Disabled OTA agents (if used) | ✅ Yes | N/A | — |
+
+**After a system/OTA update:** re-run `./optimize-samsung.sh --rotation --per-app --bloatware` to restore anything that was reset.
+
+**After a major One UI upgrade:** re-run the full interactive mode or `--all` to reapply everything.
+
 ## Safety
 
 - **No root required** — all commands use standard ADB shell
@@ -188,6 +210,7 @@ Should work on any Samsung Galaxy device with USB debugging enabled. Device type
 - **Instant revert** — `./optimize-samsung.sh --revert` undoes everything
 - **Dry-run first** — `--dry-run` shows exactly what will happen before you commit
 - **Non-destructive** — settings changes only; no files are modified on the device
+- **OS updates are opt-in only** — never disabled unless you explicitly choose it
 
 ## After Running
 
@@ -196,3 +219,7 @@ One setting can't be changed via ADB — do this manually on the device:
 > **Settings → Battery → Background usage limits** → toggle OFF **"Put unused apps to sleep"**
 
 A reboot is recommended after applying optimizations.
+
+## License
+
+MIT

@@ -148,6 +148,23 @@ Disables (not uninstalls) the following packages. They can be re-enabled at any 
 
 For apps like Facebook that aggressively lock to portrait at runtime, the script applies Android compat framework overrides to force them to follow the device sensor. See the Rotation & Display section above for the full list of overrides applied.
 
+### 6. Disable OS Updates (Opt-In)
+
+This module is **not recommended by default** and is only offered as an opt-in option in the menu. It blocks Samsung OTA system updates by:
+
+- **Disabling `com.wssyncmldm`** — Samsung OTA update agent
+- **Disabling `com.sec.android.soagent`** — Samsung Software Update agent
+- **Setting `software_update` to 0** — Disables the software update check in system settings
+
+> **Warning:** Disabling OS updates means you will NOT receive security patches or feature updates until you re-enable them.
+
+To re-enable:
+```bash
+./optimize-samsung.sh --updates --revert
+```
+
+This re-enables both packages and the software update setting.
+
 ---
 
 ## Usage
@@ -193,12 +210,14 @@ The script will:
 ./optimize-samsung.sh --memory         # Memory fixes only
 ./optimize-samsung.sh --bloatware      # Bloatware removal only
 ./optimize-samsung.sh --per-app        # Facebook rotation overrides only
+./optimize-samsung.sh --updates        # Disable OS updates
 ```
 
 ### Revert specific modules
 ```bash
 ./optimize-samsung.sh --rotation --revert    # Revert rotation only
 ./optimize-samsung.sh --bloatware --revert   # Re-enable bloatware only
+./optimize-samsung.sh --updates --revert     # Re-enable OS updates
 ```
 
 ### Device status report
@@ -225,6 +244,27 @@ Or specify a serial directly:
 ```bash
 ./optimize-samsung.sh --install-adb
 ```
+
+---
+
+## Persistence After System Updates
+
+Most optimizations **survive reboots**, but Samsung OTA updates or major One UI upgrades may reset some settings:
+
+| Optimization | Survives reboot? | Survives OTA update? | Action needed |
+|---|---|---|---|
+| Settings database changes (rotation, battery, RAM Plus) | ✅ Yes | ✅ Usually | — |
+| Disabled bloatware packages | ✅ Yes | ⚠️ May re-enable | Re-run `--bloatware` |
+| `wm set-ignore-orientation-request false` | ✅ Yes | ❌ Often resets | Re-run `--rotation` |
+| `am compat enable` per-app overrides | ✅ Yes | ❌ Often resets | Re-run `--per-app` |
+| Disabled OTA agents (`--updates`) | ✅ Yes | N/A (updates are blocked) | — |
+
+**After a system/OTA update:** Re-run rotation and per-app overrides:
+```bash
+./optimize-samsung.sh --rotation --per-app --bloatware
+```
+
+**After a major One UI upgrade:** Re-run the full interactive mode or `--all` to reapply everything.
 
 ---
 

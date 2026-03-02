@@ -593,6 +593,70 @@ reenable_bloatware() {
     fi
 }
 
+disable_updates() {
+    log_header "DISABLE OS UPDATES"
+
+    log_warn "This will block Samsung OTA system updates."
+    log_warn "You will NOT receive security patches or feature updates until reverted."
+    echo ""
+
+    # Disable Samsung OTA agent
+    local ota_pkg="com.wssyncmldm"
+    local ota_exists
+    ota_exists=$($ADB -s "$SERIAL" shell pm list packages -e 2>/dev/null | grep -c "$ota_pkg" || true)
+    if [ "$ota_exists" -gt 0 ]; then
+        log_info "Disabling Samsung OTA update agent..."
+        adb_cmd pm disable-user --user 0 "$ota_pkg"
+        log_success "Disabled: $ota_pkg (Samsung OTA agent)"
+    else
+        log_info "Samsung OTA agent already disabled or not present"
+    fi
+
+    # Disable Samsung Software Update
+    local soagent_pkg="com.sec.android.soagent"
+    local soagent_exists
+    soagent_exists=$($ADB -s "$SERIAL" shell pm list packages -e 2>/dev/null | grep -c "$soagent_pkg" || true)
+    if [ "$soagent_exists" -gt 0 ]; then
+        log_info "Disabling Samsung Software Update agent..."
+        adb_cmd pm disable-user --user 0 "$soagent_pkg"
+        log_success "Disabled: $soagent_pkg (Software Update agent)"
+    else
+        log_info "Samsung Software Update agent already disabled or not present"
+    fi
+
+    # Disable auto-update check setting
+    log_info "Disabling software update setting..."
+    adb_cmd settings put global software_update 0
+    log_success "Software update check disabled"
+
+    echo ""
+    log_warn "OS updates are now blocked. Re-enable with: $0 --updates --revert"
+}
+
+enable_updates() {
+    log_header "RE-ENABLING OS UPDATES"
+
+    local ota_pkg="com.wssyncmldm"
+    local ota_disabled
+    ota_disabled=$($ADB -s "$SERIAL" shell pm list packages -d 2>/dev/null | grep -c "$ota_pkg" || true)
+    if [ "$ota_disabled" -gt 0 ]; then
+        adb_cmd pm enable "$ota_pkg"
+        log_success "Re-enabled: $ota_pkg (Samsung OTA agent)"
+    fi
+
+    local soagent_pkg="com.sec.android.soagent"
+    local soagent_disabled
+    soagent_disabled=$($ADB -s "$SERIAL" shell pm list packages -d 2>/dev/null | grep -c "$soagent_pkg" || true)
+    if [ "$soagent_disabled" -gt 0 ]; then
+        adb_cmd pm enable "$soagent_pkg"
+        log_success "Re-enabled: $soagent_pkg (Software Update agent)"
+    fi
+
+    adb_cmd settings put global software_update 1
+    log_success "Software update check re-enabled"
+    log_info "OS updates are now active again."
+}
+
 apply_per_app_rotation() {
     log_header "PER-APP ROTATION OVERRIDES (Facebook)"
 
@@ -712,6 +776,9 @@ build_menu() {
         fi
     fi
 
+    # --- Disable updates ---
+    MENU_OPTIONS+=("updates|Disable OS Updates|Block Samsung OTA system updates (not recommended unless needed)|no")
+
     # --- Report ---
     MENU_OPTIONS+=("report|Device Status Report|Show current settings, RAM, battery, packages|yes")
 }
@@ -823,6 +890,7 @@ run_modules() {
                 memory)    revert_memory_fixes ;;
                 bloatware) reenable_bloatware ;;
                 per_app)   revert_per_app_rotation ;;
+                updates)   enable_updates ;;
                 report)    show_device_report ;;
             esac
         else
@@ -832,6 +900,7 @@ run_modules() {
                 memory)    apply_memory_fixes ;;
                 bloatware) disable_bloatware ;;
                 per_app)   apply_per_app_rotation ;;
+                updates)   disable_updates ;;
                 report)    show_device_report ;;
             esac
         fi
@@ -858,6 +927,7 @@ usage() {
     echo "  --battery       Only apply/revert battery & power fixes"
     echo "  --memory        Only apply/revert memory fixes"
     echo "  --per-app       Only apply/revert per-app rotation overrides"
+    echo "  --updates       Only disable/re-enable OS updates"
     echo ""
     echo "Other:"
     echo "  --install-adb   Download and install ADB only"
@@ -886,6 +956,7 @@ while [[ $# -gt 0 ]]; do
         --battery)      EXPLICIT_MODULES+=("battery"); INTERACTIVE=false; shift ;;
         --memory)       EXPLICIT_MODULES+=("memory"); INTERACTIVE=false; shift ;;
         --per-app)      EXPLICIT_MODULES+=("per_app"); INTERACTIVE=false; shift ;;
+        --updates)      EXPLICIT_MODULES+=("updates"); INTERACTIVE=false; shift ;;
         --install-adb)  INSTALL_ADB_ONLY=true; shift ;;
         -h|--help)      usage; exit 0 ;;
         -*)             log_error "Unknown option: $1"; echo ""; usage; exit 1 ;;

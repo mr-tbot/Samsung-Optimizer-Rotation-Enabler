@@ -20,6 +20,7 @@ param(
     [switch]$Memory,
     [switch]$Bloatware,
     [switch]$PerApp,
+    [switch]$Updates,
     [switch]$InstallAdb,
     [string]$Serial = "",
     [switch]$Help
@@ -548,6 +549,67 @@ function Revert-PerAppRotation {
     }
 }
 
+function Disable-OsUpdates {
+    Write-Header "DISABLE OS UPDATES"
+
+    Write-Warn "This will block Samsung OTA system updates."
+    Write-Warn "You will NOT receive security patches or feature updates until reverted."
+    Write-Host ""
+
+    # Disable Samsung OTA agent
+    $otaPkg = "com.wssyncmldm"
+    $enabledPkgs = (& $script:ADB -s $script:SERIAL shell pm list packages -e 2>&1) -join "`n"
+    if ($enabledPkgs -match [regex]::Escape($otaPkg)) {
+        Write-Info "Disabling Samsung OTA update agent..."
+        $result = Invoke-Adb "pm", "disable-user", "--user", "0", $otaPkg
+        Write-Ok "Disabled: $otaPkg (Samsung OTA agent)"
+    }
+    else {
+        Write-Info "Samsung OTA agent already disabled or not present"
+    }
+
+    # Disable Samsung Software Update
+    $soagentPkg = "com.sec.android.soagent"
+    if ($enabledPkgs -match [regex]::Escape($soagentPkg)) {
+        Write-Info "Disabling Samsung Software Update agent..."
+        $result = Invoke-Adb "pm", "disable-user", "--user", "0", $soagentPkg
+        Write-Ok "Disabled: $soagentPkg (Software Update agent)"
+    }
+    else {
+        Write-Info "Samsung Software Update agent already disabled or not present"
+    }
+
+    # Disable auto-update check setting
+    Write-Info "Disabling software update setting..."
+    Invoke-Adb "settings", "put", "global", "software_update", "0" | Out-Null
+    Write-Ok "Software update check disabled"
+
+    Write-Host ""
+    Write-Warn "OS updates are now blocked. Re-enable with: .\optimize-samsung.ps1 -Updates -Revert"
+}
+
+function Enable-OsUpdates {
+    Write-Header "RE-ENABLING OS UPDATES"
+
+    $disabledPkgs = (& $script:ADB -s $script:SERIAL shell pm list packages -d 2>&1) -join "`n"
+
+    $otaPkg = "com.wssyncmldm"
+    if ($disabledPkgs -match [regex]::Escape($otaPkg)) {
+        Invoke-Adb "pm", "enable", $otaPkg | Out-Null
+        Write-Ok "Re-enabled: $otaPkg (Samsung OTA agent)"
+    }
+
+    $soagentPkg = "com.sec.android.soagent"
+    if ($disabledPkgs -match [regex]::Escape($soagentPkg)) {
+        Invoke-Adb "pm", "enable", $soagentPkg | Out-Null
+        Write-Ok "Re-enabled: $soagentPkg (Software Update agent)"
+    }
+
+    Invoke-Adb "settings", "put", "global", "software_update", "1" | Out-Null
+    Write-Ok "Software update check re-enabled"
+    Write-Info "OS updates are now active again."
+}
+
 function Show-DeviceReport {
     Write-Header "DEVICE STATUS REPORT"
 
@@ -621,6 +683,9 @@ function Show-InteractiveMenu {
         $isRecPerApp = ($script:DEVICE_TYPE -eq "foldable" -or $script:DEVICE_TYPE -eq "tablet")
         $menuOptions += @{ Key = "per_app"; Label = "Facebook Rotation Overrides"; Desc = "Force Facebook to respect device rotation"; Rec = $isRecPerApp }
     }
+
+    # Disable updates
+    $menuOptions += @{ Key = "updates"; Label = "Disable OS Updates"; Desc = "Block Samsung OTA system updates (not recommended unless needed)"; Rec = $false }
 
     # Report
     $menuOptions += @{ Key = "report"; Label = "Device Status Report"; Desc = "Show current settings, RAM, battery, packages"; Rec = $true }
@@ -726,6 +791,7 @@ function Run-Modules {
                 "memory"    { Revert-MemoryFixes }
                 "bloatware" { Enable-Bloatware }
                 "per_app"   { Revert-PerAppRotation }
+                "updates"   { Enable-OsUpdates }
                 "report"    { Show-DeviceReport }
             }
         }
@@ -736,6 +802,7 @@ function Run-Modules {
                 "memory"    { Apply-MemoryFixes }
                 "bloatware" { Disable-Bloatware }
                 "per_app"   { Apply-PerAppRotation }
+                "updates"   { Disable-OsUpdates }
                 "report"    { Show-DeviceReport }
             }
         }
@@ -762,6 +829,7 @@ function Show-Usage {
     Write-Host "  -Memory         Memory optimization"
     Write-Host "  -Bloatware      Bloatware removal"
     Write-Host "  -PerApp         Per-app rotation overrides"
+    Write-Host "  -Updates        Disable/re-enable OS updates"
     Write-Host ""
     Write-Host "Other:"
     Write-Host "  -InstallAdb     Download and install ADB only"
@@ -820,6 +888,7 @@ if ($Battery)   { $explicitModules += "battery" }
 if ($Memory)    { $explicitModules += "memory" }
 if ($Bloatware) { $explicitModules += "bloatware" }
 if ($PerApp)    { $explicitModules += "per_app" }
+if ($Updates)   { $explicitModules += "updates" }
 
 if ($Report) {
     Show-DeviceReport
