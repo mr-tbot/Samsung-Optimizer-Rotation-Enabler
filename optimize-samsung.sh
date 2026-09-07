@@ -1,4 +1,6 @@
 #!/bin/bash
+# Copyright (c) 2026 mr-tbot (Talbot "TBOT" Simons / BOT-HOLDINGS, LLC)
+# SPDX-License-Identifier: MIT
 #
 # Samsung Device Optimizer v2.0
 # Interactive tool that detects your device and offers tailored optimizations via ADB.

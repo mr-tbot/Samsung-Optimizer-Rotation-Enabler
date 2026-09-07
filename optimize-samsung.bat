@@ -1,4 +1,6 @@
 @echo off
+REM Copyright (c) 2026 mr-tbot (Talbot "TBOT" Simons / BOT-HOLDINGS, LLC)
+REM SPDX-License-Identifier: MIT
 :: Samsung Device Optimizer v2.0 — Windows Launcher
 :: This batch file launches the PowerShell script for Windows users.
 ::

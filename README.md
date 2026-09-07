@@ -227,6 +227,13 @@ One setting can't be changed via ADB — do this manually on the device:
 
 A reboot is recommended after applying optimizations.
 
-## License
+## License & acknowledgements
 
-MIT
+This project is released under the [MIT License](LICENSE) — Copyright (c) 2026 mr-tbot (Talbot "TBOT" Simons / BOT-HOLDINGS, LLC).
+
+**Built on [Android Debug Bridge](https://developer.android.com/tools/adb)** — every optimization here is an ordinary `adb shell` call. No adb source or binary is redistributed in this repository; if adb is missing, the scripts download the official platform-tools bundle from `dl.google.com` onto your own machine, under [Google's Android SDK Terms](https://developer.android.com/studio/terms).
+
+Full third-party attribution is in [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md). "Samsung", "Galaxy" and "Bixby" are trademarks of Samsung Electronics Co., Ltd.; "Android" and "Google" are trademarks of Google LLC. This project is an independent third-party tool and is not endorsed by or affiliated with Samsung or Google.
+
+This software is provided **as is, without warranty of any kind**. It disables OEM packages and changes device settings on hardware you own — read `--dry-run` output before you apply anything, and know that `--revert` is your undo.
+

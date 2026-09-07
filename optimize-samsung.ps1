@@ -1,4 +1,6 @@
 # Samsung Device Optimizer v2.0 — PowerShell Edition
+# Copyright (c) 2026 mr-tbot (Talbot "TBOT" Simons / BOT-HOLDINGS, LLC)
+# SPDX-License-Identifier: MIT
 # Interactive tool that detects your Samsung device and offers tailored optimizations via ADB.
 #
 # Usage:
